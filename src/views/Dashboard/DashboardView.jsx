@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ROLE_NAMES, OUTL } from '../../data/constants';
 import { money, hhmm } from '../../utils/formatters';
 import { mStatus, mDue } from '../../utils/helpers';
 import RealisticSkyBanner from '../../components/dashboard/RealisticSkyBanner';
+import BccFriendshipBanner from '../../components/dashboard/BccFriendshipBanner';
 
 export default function DashboardView() {
   const { role, members, apps, rooms, tables, transactions, setView, openChat } = useApp();
+  // Default to 'sky' so on reload the Live Sun banner appears first!
+  const [dashboardBannerMode, setDashboardBannerMode] = useState('sky');
 
   // Computations
   const successTxns = transactions.filter((t) => t.st === 'Success');
@@ -51,9 +54,51 @@ export default function DashboardView() {
   const trendDays = ['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Today'];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Dynamic Realistic Sun & Moon Riverfront Banner */}
-      <RealisticSkyBanner />
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Dynamic Dashboard Banner with Mode Switcher (Default: Live Sun) */}
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-serif font-bold text-bcc-text tracking-wide uppercase">
+              {dashboardBannerMode === 'sky'
+                ? 'রিভারফ্রন্ট ২৪-ঘণ্টা লাইভ স্কাই (24h Live Sun & Sky)'
+                : 'বাংলাদেশ-চীন ম্যাসকট অ্যানিমেশন (Friendship Mascot)'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 bg-white/70 backdrop-blur-xs p-0.5 rounded-xl border border-bcc-line text-xs font-medium shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setDashboardBannerMode('sky')}
+              className={`px-3 py-1 rounded-lg transition-all ${
+                dashboardBannerMode === 'sky'
+                  ? 'bg-[#0b6e52] text-white shadow-xs font-semibold'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              🌅 24h Live Sun
+            </button>
+            <button
+              type="button"
+              onClick={() => setDashboardBannerMode('friendship')}
+              className={`px-3 py-1 rounded-lg transition-all ${
+                dashboardBannerMode === 'friendship'
+                  ? 'bg-[#0b6e52] text-white shadow-xs font-semibold'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              🐼🐯 Friendship Mascot
+            </button>
+          </div>
+        </div>
+
+        {dashboardBannerMode === 'sky' ? (
+          <RealisticSkyBanner />
+        ) : (
+          <BccFriendshipBanner />
+        )}
+      </div>
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">

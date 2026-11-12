@@ -252,12 +252,20 @@ function getSkyAt(progress) {
 export default function RealisticSkyBanner() {
   const { role } = useApp();
 
-  // Mode: 'loop' (GSAP 24-Hour Continuous Auto Loop) or 'realtime' (Live clock sync)
-  const [mode, setMode] = useState('loop');
-  const [minuteOfDay, setMinuteOfDay] = useState(15 * 60 + 10);
+  // Mode: 'realtime' (Live clock sync) or 'loop' (GSAP 24-Hour Continuous Auto Loop)
+  const [mode, setMode] = useState('realtime');
+  const [minuteOfDay, setMinuteOfDay] = useState(() => {
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+  });
   const [currentDate, setCurrentDate] = useState(() => new Date());
 
-  const loopProxyRef = useRef({ minute: 15 * 60 + 10 });
+  const loopProxyRef = useRef({
+    minute: (() => {
+      const d = new Date();
+      return d.getHours() * 60 + d.getMinutes();
+    })()
+  });
   const sunCoronaRef = useRef(null);
   const sunRaysRef = useRef(null);
   const meteorRef = useRef(null);
