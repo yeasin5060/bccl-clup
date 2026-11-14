@@ -1,18 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { money, qrSVG } from '../../utils/formatters';
 import { mStatus, mDue, getMemberLedger } from '../../utils/helpers';
 import Pill from '../common/Pill';
 
 export default function MemberDetailModal() {
-  const { modal, closeModal, collectDues } = useApp();
+  const { modal, closeModal, collectDues, updateMemberEmail } = useApp();
   const member = modal.data;
+
+  const [editEmail, setEditEmail] = useState(member?.email || '');
 
   if (!member) return null;
 
   const status = mStatus(member);
   const dues = mDue(member);
   const ledger = getMemberLedger(member);
+
+  const handleSaveEmail = () => {
+    if (editEmail.trim()) {
+      updateMemberEmail(member.id, editEmail.trim());
+      member.email = editEmail.trim();
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -52,6 +61,38 @@ export default function MemberDetailModal() {
             <div className="font-semibold">{member.year}</div>
           </div>
         </div>
+      </div>
+
+      {/* Super Admin Login Gmail Assignment */}
+      <div className="p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-bcc-line space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold text-bcc-text flex items-center gap-1.5">
+            <span>📧</span>
+            <span>Member Login Gmail (সুপার এডমিন কর্তৃক নির্ধারিত)</span>
+          </label>
+          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+            Authorized Login
+          </span>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="email"
+            value={editEmail}
+            onChange={(e) => setEditEmail(e.target.value)}
+            placeholder="e.g. member.name@gmail.com"
+            className="flex-1 px-3 py-1.5 rounded-lg border border-bcc-line bg-bcc-surface text-xs font-mono"
+          />
+          <button
+            type="button"
+            onClick={handleSaveEmail}
+            className="px-3.5 py-1.5 rounded-lg bg-[#0b6e52] hover:bg-[#095842] text-white text-xs font-semibold shadow-xs transition-colors whitespace-nowrap"
+          >
+            Save Gmail
+          </button>
+        </div>
+        <p className="text-[10.5px] text-bcc-muted">
+          Member can only log into Member Dashboard using this specific Super Admin assigned Gmail.
+        </p>
       </div>
 
       {/* Status & Dues Info */}

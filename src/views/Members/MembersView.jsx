@@ -23,7 +23,7 @@ export default function MembersView() {
 
   const q = memQ.toLowerCase();
   const filteredMembers = members.filter((m) => {
-    const matchesQuery = !q || (m.name + (m.alt || '') + m.id).toLowerCase().includes(q);
+    const matchesQuery = !q || (m.name + (m.alt || '') + m.id + (m.email || '')).toLowerCase().includes(q);
     const matchesTier = !memT || m.tier === memT;
     const matchesStatus = !memS || mStatus(m) === memS;
     return matchesQuery && matchesTier && matchesStatus;
@@ -102,14 +102,22 @@ export default function MembersView() {
                   <tr key={m.id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
                     <td className="font-mono text-xs font-semibold text-bcc-muted">{m.id}</td>
                     <td>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <b className="text-bcc-text font-serif">{m.name}</b>
-                        {m.alt && (
-                          <span className="text-xs text-bcc-muted font-serif">{m.alt}</span>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <b className="text-bcc-text font-serif">{m.name}</b>
+                          {m.alt && (
+                            <span className="text-xs text-bcc-muted font-serif">{m.alt}</span>
+                          )}
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-bcc-surface2 text-bcc-muted font-semibold">
+                            {m.nat}
+                          </span>
+                        </div>
+                        {m.email && (
+                          <div className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 truncate flex items-center gap-1">
+                            <span>📧</span>
+                            <span>{m.email}</span>
+                          </div>
                         )}
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-bcc-surface2 text-bcc-muted font-semibold">
-                          {m.nat}
-                        </span>
                       </div>
                     </td>
                     <td className="text-xs font-medium">{m.tier}</td>

@@ -3,8 +3,13 @@ import { useApp } from '../../context/AppContext';
 import { ALL_NAV, ROLES, ROLE_NAMES, TRANSLATIONS } from '../../data/constants';
 
 export default function Sidebar() {
-  const { role, view, setView, lang, logout } = useApp();
+  const { role, view, setView, lang, logout, currentMember } = useApp();
   const allow = ROLES[role] || [];
+
+  // When logged in as member, show member specific navigation items
+  const navItems = role === 'member'
+    ? ALL_NAV.filter((n) => allow.includes(n.id))
+    : ALL_NAV.filter((n) => n.id !== 'member_dash');
 
   return (
     <aside className="side select-none">
@@ -23,7 +28,7 @@ export default function Sidebar() {
 
       {/* Nav List - Independently scrollable with custom slim scrollbar */}
       <nav id="nav" aria-label="Modules">
-        {ALL_NAV.map((n) => {
+        {navItems.map((n) => {
           const isAllowed = allow.includes(n.id);
           const isCurrent = view === n.id;
           const label = TRANSLATIONS[lang]?.[n.id] || n.label;
@@ -50,15 +55,15 @@ export default function Sidebar() {
         {/* User Profile Card */}
         <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-white/[0.04] border border-white/5">
           <div className="w-8 h-8 rounded-full bg-emerald-800/90 border border-[#e8b04a]/40 flex items-center justify-center font-serif font-bold text-[#e8b04a] text-xs flex-shrink-0 shadow-sm">
-            AR
+            {role === 'member' && currentMember ? currentMember.name.slice(0, 2).toUpperCase() : 'AR'}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-xs font-semibold text-white truncate flex items-center gap-1.5">
-              <span>Anika Rahman</span>
+              <span>{role === 'member' && currentMember ? currentMember.name : 'Anika Rahman'}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" title="Active session" />
             </div>
             <div className="text-[10px] text-[#8fa89c] truncate font-serif">
-              {ROLE_NAMES[role] || 'General Manager'}
+              {role === 'member' && currentMember ? `${currentMember.tier} · ${currentMember.id}` : ROLE_NAMES[role] || 'General Manager'}
             </div>
           </div>
         </div>

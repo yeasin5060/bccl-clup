@@ -25,16 +25,24 @@ import PaymentsView from './views/Payments/PaymentsView';
 import ReportsView from './views/Reports/ReportsView';
 import EventsView from './views/Events/EventsView';
 import ErpModuleView from './views/ErpModules/ErpModuleView';
+import MemberDashboardView from './views/Members/MemberDashboardView';
 
 export default function App() {
-  const { view, modal, isLoggedIn } = useApp();
+  const { view, modal, isLoggedIn, role } = useApp();
 
   if (!isLoggedIn) {
     return <LoginScreen />;
   }
 
   const renderActiveView = () => {
+    // If role is member and view is dash or member_dash, show Member Dashboard
+    if (role === 'member' && (view === 'dash' || view === 'member_dash')) {
+      return <MemberDashboardView />;
+    }
+
     switch (view) {
+      case 'member_dash':
+        return <MemberDashboardView />;
       case 'dash':
         return <DashboardView />;
       case 'members':

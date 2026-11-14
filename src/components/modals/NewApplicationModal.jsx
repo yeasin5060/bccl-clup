@@ -6,6 +6,7 @@ export default function NewApplicationModal() {
   const { addApp, closeModal } = useApp();
 
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [tier, setTier] = useState('Associate');
   const [prop, setProp] = useState('');
   const [sec, setSec] = useState('');
@@ -18,8 +19,10 @@ export default function NewApplicationModal() {
       setError('Applicant name is required.');
       return;
     }
+    const finalEmail = email.trim() || `${name.trim().toLowerCase().replace(/[^a-z0-9]/g, '.')}@gmail.com`;
     addApp({
       name: name.trim(),
+      email: finalEmail,
       tier,
       prop: prop.trim() || 'General committee',
       sec: sec.trim() || 'General committee',
@@ -51,6 +54,22 @@ export default function NewApplicationModal() {
           className="w-full px-3 py-2 rounded-lg border border-bcc-line bg-bcc-surface text-sm"
           required
         />
+      </div>
+
+      <div>
+        <label className="text-xs font-semibold text-bcc-muted block mb-1">
+          Applicant Login Gmail (সুপার এডমিন কর্তৃক নির্ধারিত জিমেইল)
+        </label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="e.g. tariq.mansoor@gmail.com"
+          className="w-full px-3 py-2 rounded-lg border border-bcc-line bg-bcc-surface text-sm font-mono"
+        />
+        <span className="text-[10px] text-bcc-muted mt-0.5 block">
+          This Gmail will be used by the member to sign into the Member Dashboard.
+        </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

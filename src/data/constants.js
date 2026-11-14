@@ -5,17 +5,20 @@ export const ROLES = {
   ],
   front: ['dash', 'members', 'stay', 'events', 'mmg', 'res', 'hot'],
   cashier: ['dash', 'pos', 'pay'],
-  hr: ['dash', 'staff', 'pay', 'rep', 'acc', 'hrm']
+  hr: ['dash', 'staff', 'pay', 'rep', 'acc', 'hrm'],
+  member: ['member_dash', 'stay', 'pos', 'fit', 'events']
 };
 
 export const ROLE_NAMES = {
   admin: 'General manager',
   front: 'Front desk',
   cashier: 'Outlet cashier',
-  hr: 'HR and accounts'
+  hr: 'HR and accounts',
+  member: 'Club Member'
 };
 
 export const CORE_NAV = [
+  { id: 'member_dash', label: 'Member Portal', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
   { id: 'dash', label: 'Dashboard', icon: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z' },
   { id: 'members', label: 'Members', icon: 'M12 4a4 4 0 100 8 4 4 0 000-8zM4 21c0-4 4-6 8-6s8 2 8 6' },
   { id: 'staff', label: 'Employees', icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm14 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75' },
@@ -49,6 +52,7 @@ export const ALL_NAV = [
 
 export const TRANSLATIONS = {
   en: {
+    member_dash: 'Member Portal',
     dash: 'Dashboard',
     members: 'Members',
     staff: 'Employees',
@@ -60,6 +64,7 @@ export const TRANSLATIONS = {
     events: 'Events and Templates'
   },
   bn: {
+    member_dash: 'সদস্য পোর্টাল',
     dash: 'ড্যাশবোর্ড',
     members: 'সদস্য',
     staff: 'কর্মী',
@@ -71,6 +76,7 @@ export const TRANSLATIONS = {
     events: 'অনুষ্ঠান ও টেমপ্লেট'
   },
   zh: {
+    member_dash: '会员中心',
     dash: '总览',
     members: '会员',
     staff: '员工',

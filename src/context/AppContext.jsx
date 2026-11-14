@@ -126,17 +126,21 @@ export const AppProvider = ({ children }) => {
 
   // Authentication & Session
   const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [currentMember, setCurrentMember] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialQuery, setChatInitialQuery] = useState(null);
 
   const logout = useCallback(() => {
     setIsLoggedIn(false);
+    setCurrentMember(null);
+    setRoleState('admin');
     showToast(lang === 'bn' ? 'লগ আউট সম্পন্ন হয়েছে' : 'Logged out from BCC Club OS');
   }, [lang, showToast]);
 
   const login = useCallback(
     (chosenRole = 'admin') => {
       setRoleState(chosenRole);
+      setCurrentMember(null);
       setIsLoggedIn(true);
       showToast(
         lang === 'bn'
@@ -145,6 +149,61 @@ export const AppProvider = ({ children }) => {
       );
     },
     [lang, showToast]
+  );
+
+  const loginAsMember = useCallback(
+    (emailOrId) => {
+      if (!emailOrId || !emailOrId.trim()) {
+        return { success: false, error: 'Please enter your registered Gmail or Member ID.' };
+      }
+      const q = emailOrId.trim().toLowerCase();
+      const found = members.find(
+        (m) =>
+          (m.email && m.email.toLowerCase() === q) ||
+          m.id.toLowerCase() === q ||
+          m.name.toLowerCase() === q
+      );
+
+      if (!found) {
+        return {
+          success: false,
+          error:
+            lang === 'bn'
+              ? 'এই জিমেইলটি ক্লাবের কোনো সদস্যের সাথে লিঙ্ক করা নেই। সুপার এডমিন যে জিমেইল দিয়েছেন সেটি দিয়ে প্রবেশ করুন।'
+              : 'Gmail not registered in Club Directory. Please enter the Gmail provided by Super Admin.'
+        };
+      }
+
+      setCurrentMember(found);
+      setRoleState('member');
+      setViewState('member_dash');
+      setIsLoggedIn(true);
+      showToast(
+        lang === 'bn'
+          ? `স্বাগতম ${found.name}! সদস্য পোর্টালে লগইন সম্পন্ন হয়েছে।`
+          : `Welcome ${found.name}! Signed in to Member Portal.`
+      );
+      return { success: true, member: found };
+    },
+    [members, lang, showToast]
+  );
+
+  const updateMemberEmail = useCallback(
+    (memberId, newEmail) => {
+      const trimmed = (newEmail || '').trim();
+      setMembers((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, email: trimmed } : m))
+      );
+      if (currentMember?.id === memberId) {
+        setCurrentMember((prev) => (prev ? { ...prev, email: trimmed } : prev));
+      }
+      showToast(
+        lang === 'bn'
+          ? `সদস্যের জিমেইল আপডেট করা হয়েছে: ${trimmed}`
+          : `Updated Member Gmail to: ${trimmed}`
+      );
+    },
+    [currentMember, lang, showToast]
   );
 
   const openChat = useCallback((query = null) => {
@@ -159,8 +218,15 @@ export const AppProvider = ({ children }) => {
   // Safe Navigation based on role
   const setRole = (newRole) => {
     setRoleState(newRole);
-    if (!ROLES[newRole]?.includes(view)) {
-      setViewState('dash');
+    if (newRole === 'member') {
+      if (!currentMember && members.length > 0) {
+        setCurrentMember(members[0]);
+      }
+      setViewState('member_dash');
+    } else {
+      if (!ROLES[newRole]?.includes(view)) {
+        setViewState('dash');
+      }
     }
   };
 
@@ -238,6 +304,7 @@ export const AppProvider = ({ children }) => {
         id: newId,
         name: app.name,
         alt: '',
+        email: app.email || `${app.name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@gmail.com`,
         tier: app.tier,
         nat: 'BD',
         over: 0,
@@ -738,6 +805,10 @@ export const AppProvider = ({ children }) => {
         addTxn,
         isLoggedIn,
         setIsLoggedIn,
+        currentMember,
+        setCurrentMember,
+        loginAsMember,
+        updateMemberEmail,
         logout,
         login,
         isChatOpen,

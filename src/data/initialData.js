@@ -43,21 +43,26 @@ const MN = [
 ];
 
 export const getInitialMembers = () =>
-  MN.map((m, i) => ({
-    id: i === 0 ? 'BCC-0482' : 'BCC-' + ('0000' + (100 + i * 37)).slice(-4),
-    name: m[0],
-    alt: m[1],
-    tier: m[2],
-    nat: m[3],
-    over: m[4],
-    spend: Math.round(R() * 40000 + 3000),
-    year: 2008 + Math.floor(R() * 16)
-  }));
+  MN.map((m, i) => {
+    const rawClean = m[0].toLowerCase().replace(/[^a-z0-9]/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/g, '');
+    const defaultEmail = `${rawClean}@gmail.com`;
+    return {
+      id: i === 0 ? 'BCC-0482' : 'BCC-' + ('0000' + (100 + i * 37)).slice(-4),
+      name: m[0],
+      alt: m[1],
+      email: defaultEmail,
+      tier: m[2],
+      nat: m[3],
+      over: m[4],
+      spend: Math.round(R() * 40000 + 3000),
+      year: 2008 + Math.floor(R() * 16)
+    };
+  });
 
 export const getInitialApps = () => [
-  { id: 'A-31', name: 'Imran Kabir', tier: 'Associate', prop: 'Anika Rahman', sec: 'Farhan Chowdhury', note: 'Software engineer, age 34' },
-  { id: 'A-32', name: 'Huang Tao 黄涛', tier: 'Corporate', prop: 'Li Wei', sec: 'Chen Hao', note: 'Nominee for a Chinese engineering firm' },
-  { id: 'A-33', name: 'Maliha Sultana', tier: 'Permanent', prop: 'Sadia Islam', sec: 'Rafiq Uddin', note: 'Physician, Gulshan' }
+  { id: 'A-31', name: 'Imran Kabir', email: 'imran.kabir@gmail.com', tier: 'Associate', prop: 'Anika Rahman', sec: 'Farhan Chowdhury', note: 'Software engineer, age 34' },
+  { id: 'A-32', name: 'Huang Tao 黄涛', email: 'huang.tao@gmail.com', tier: 'Corporate', prop: 'Li Wei', sec: 'Chen Hao', note: 'Nominee for a Chinese engineering firm' },
+  { id: 'A-33', name: 'Maliha Sultana', email: 'maliha.sultana@gmail.com', tier: 'Permanent', prop: 'Sadia Islam', sec: 'Rafiq Uddin', note: 'Physician, Gulshan' }
 ];
 
 export const getInitialStaff = () => {
