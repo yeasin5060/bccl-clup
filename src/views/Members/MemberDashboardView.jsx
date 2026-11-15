@@ -1,8 +1,215 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { money, qrSVG } from '../../utils/formatters';
 import { mStatus, mDue, getMemberLedger } from '../../utils/helpers';
 import Pill from '../../components/common/Pill';
+
+// ============================================================================
+// CAFÉ & BEER / BAR MENU CATALOG (Floor 2 & Floor 3)
+// ============================================================================
+const CAFE_AND_BAR_MENU = [
+  // 1. BEER & BAR DRINKS (Lantern Bar & Lounge - Floor 2 & Rooftop Floor 10)
+  {
+    id: 'ts_beer',
+    name: 'Tsingtao Premium Draft Beer',
+    alt: '青岛生啤酒',
+    bnName: 'সিংতাও প্রিমিয়াম ড্রাফট বিয়ার',
+    category: 'beer',
+    catLabel: 'Beer & Bar',
+    price: 480,
+    outlet: 'Lantern Bar',
+    floor: 'Floor 2 & 10',
+    desc: 'Ice-cold imported draught beer served in frosted club goblet. Crisp, refreshing golden malt finish.',
+    badge: 'Popular',
+    icon: '🍺'
+  },
+  {
+    id: 'craft_beer',
+    name: 'BCC Bilateral Craft Golden Lager',
+    alt: '金牌精酿啤酒',
+    bnName: 'বিসিসি ক্রাফট গোল্ডেন লেগার',
+    category: 'beer',
+    catLabel: 'Beer & Bar',
+    price: 520,
+    outlet: 'Lantern Bar',
+    floor: 'Floor 2',
+    desc: 'Club specialty craft lager brewed with noble hops and golden malt. 330ml chilled bottle.',
+    badge: 'Club Special',
+    icon: '🍻'
+  },
+  {
+    id: 'baijiu_shot',
+    name: 'Imperial Maotai Baijiu (30ml Shot)',
+    alt: '贵州茅台 (小杯)',
+    bnName: 'ইম্পেরিয়াল মাওতাই বাইজিউ',
+    category: 'beer',
+    catLabel: 'Beer & Bar',
+    price: 850,
+    outlet: 'Lantern Bar',
+    floor: 'Floor 2',
+    desc: 'Authentic Guizhou aroma Baijiu served in ritual ceramic cup. Reserved for club VIP members.',
+    badge: 'VIP Only',
+    icon: '🍶'
+  },
+  {
+    id: 'scotch_12y',
+    name: 'Highland Single Malt Scotch (12Y)',
+    alt: '单一麦芽威士忌',
+    bnName: 'হাইল্যান্ড সিঙ্গেল মল্ট স্কচ (১২ বছর)',
+    category: 'beer',
+    catLabel: 'Beer & Bar',
+    price: 1100,
+    outlet: 'Lantern Bar',
+    floor: 'Floor 2',
+    desc: 'Served neat or on hand-carved ice sphere with salted edamame and spiced roasted nuts.',
+    badge: 'Premium',
+    icon: '🥃'
+  },
+  {
+    id: 'jasmine_mocktail',
+    name: 'Jasmine Sunset Cooler Mocktail',
+    alt: '茉莉日落特调',
+    bnName: 'জেসমিন সানসেট মকটেল',
+    category: 'beer',
+    catLabel: 'Beer & Bar',
+    price: 380,
+    outlet: 'Lantern Bar',
+    floor: 'Floor 2',
+    desc: 'Fragrant jasmine tea infused with fresh lychee nectar, garden mint, and sparkling tonic.',
+    badge: 'Mocktail',
+    icon: '🍹'
+  },
+  {
+    id: 'borhani_spritz',
+    name: 'Heritage Borhani Spritz',
+    alt: '特色香料酸奶汽水',
+    bnName: 'হেরিটেজ বোরহানি স্প্রিটজ',
+    category: 'beer',
+    catLabel: 'Beer & Bar',
+    price: 320,
+    outlet: 'Lantern Bar',
+    floor: 'Floor 2',
+    desc: 'Traditional spicy mint yogurt drink blended with sparkling soda and roasted cumin zest.',
+    badge: 'Desi Blend',
+    icon: '🍸'
+  },
+
+  // 2. CAFÉ & COFFEE & SPECIALTY TEA (Tea Garden Café - Floor 3)
+  {
+    id: 'artisan_cappuccino',
+    name: 'Artisan Arabica Cappuccino',
+    alt: '意式卡布奇诺',
+    bnName: 'আর্টিসান ক্যাপুচিনো কফি',
+    category: 'cafe',
+    catLabel: 'Café & Coffee',
+    price: 280,
+    outlet: 'Tea Garden',
+    floor: 'Floor 3',
+    desc: 'Double shot rich espresso with velvety steamed micro-foam and Madagascar cocoa dusting.',
+    badge: 'Best Seller',
+    icon: '☕'
+  },
+  {
+    id: 'signature_americano',
+    name: 'Signature Dark Roast Americano',
+    alt: '经典美式咖啡',
+    bnName: 'সিগনেচার ডার্ক আমেরিকান কফি',
+    category: 'cafe',
+    catLabel: 'Café & Coffee',
+    price: 240,
+    outlet: 'Tea Garden',
+    floor: 'Floor 3',
+    desc: 'Smooth, aromatic dark roast blend with caramel undertones. Served piping hot or iced.',
+    badge: 'Classic',
+    icon: '☕'
+  },
+  {
+    id: 'sylhet_tea_pot',
+    name: 'Heritage Sylhet First Flush Tea (Pot)',
+    alt: '锡尔赫特红茶',
+    bnName: 'সিলেট হেরিটেজ চা (পট)',
+    category: 'cafe',
+    catLabel: 'Café & Coffee',
+    price: 260,
+    outlet: 'Tea Garden',
+    floor: 'Floor 3',
+    desc: 'Brewed premium Malnicherra estate black tea. Served with warm condensed milk and cardamom.',
+    badge: 'Heritage',
+    icon: '🫖'
+  },
+  {
+    id: 'longjing_tea_pot',
+    name: 'Imperial Longjing Dragon Well Green Tea',
+    alt: '西湖特级龙井',
+    bnName: 'ইম্পেরিয়াল লংজিং ড্রাগন গ্রিন টি',
+    category: 'cafe',
+    catLabel: 'Café & Coffee',
+    price: 420,
+    outlet: 'Tea Garden',
+    floor: 'Floor 3',
+    desc: 'Authentic West Lake pan-roasted emerald tea leaves with nutty roasted chestnut aroma.',
+    badge: 'Premium Tea',
+    icon: '🍵'
+  },
+  {
+    id: 'cheesecake',
+    name: 'New York Baked Cheesecake',
+    alt: '纽约烤芝士蛋糕',
+    bnName: 'নিউইয়র্ক বেকড চিজকেক',
+    category: 'cafe',
+    catLabel: 'Café & Coffee',
+    price: 340,
+    outlet: 'Tea Garden',
+    floor: 'Floor 3',
+    desc: 'Rich Philadelphia cream cheese on graham crust topped with wild berry compote.',
+    badge: 'Bakery',
+    icon: '🍰'
+  },
+
+  // 3. FOOD & SNACKS (Silk Route & Tea Garden)
+  {
+    id: 'club_burger',
+    name: 'Classic Club Wagyu Burger & Fries',
+    alt: '俱乐部牛肉汉堡',
+    bnName: 'ক্লাসিক ক্লাব বার্গার ও ফ্রাইস',
+    category: 'food',
+    catLabel: 'Food & Snacks',
+    price: 450,
+    outlet: 'Silk Route',
+    floor: 'Floor 2',
+    desc: 'Juicy grilled beef patty, melted sharp cheddar, caramelized onions, crispy golden fries.',
+    badge: 'Chef Choice',
+    icon: '🍔'
+  },
+  {
+    id: 'club_sandwich',
+    name: 'Triple-Decker Club Sandwich',
+    alt: '俱乐部三明治',
+    bnName: 'ট্রিপল-ডেকার ক্লাব স্যান্ডউইচ',
+    category: 'food',
+    catLabel: 'Food & Snacks',
+    price: 380,
+    outlet: 'Tea Garden',
+    floor: 'Floor 3',
+    desc: 'Smoked chicken breast, turkey bacon, farm egg, vine tomato, butter lettuce and garlic aioli.',
+    badge: 'Light Meal',
+    icon: '🥪'
+  },
+  {
+    id: 'dim_sum_platter',
+    name: 'Steamed Dim Sum Platter (8 pcs)',
+    alt: '蒸点心拼盘 (8件)',
+    bnName: 'স্টিমড ডিম সাম প্ল্যাটার (৮ পিস)',
+    category: 'food',
+    catLabel: 'Food & Snacks',
+    price: 520,
+    outlet: 'Silk Route',
+    floor: 'Floor 2',
+    desc: 'Har Gow shrimp dumplings, Siu Mai, and crystal spinach dumplings with Sichuan chili crisp.',
+    badge: 'Authentic',
+    icon: '🥟'
+  }
+];
 
 export default function MemberDashboardView() {
   const {
@@ -13,12 +220,29 @@ export default function MemberDashboardView() {
     setView,
     openChat,
     lang,
-    transactions
+    transactions,
+    addTxn,
+    showToast
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState('card'); // 'card' | 'dues' | 'book' | 'orders'
+  // Active workspace tab: default to 'cafe_bar' as requested so member can order immediately!
+  const [activeTab, setActiveTab] = useState('cafe_bar'); // 'cafe_bar' | 'orders' | 'card' | 'dues' | 'book'
 
-  // Fallback to first member if none selected (e.g. preview)
+  // Café & Bar Filter Category
+  const [selectedCategory, setSelectedCategory] = useState('all'); // 'all' | 'beer' | 'cafe' | 'food'
+
+  // Cart state: { [itemId]: quantity }
+  const [cart, setCart] = useState({});
+
+  // Delivery options state
+  const [deliveryLocation, setDeliveryLocation] = useState('Lantern Bar & Lounge (Floor 2)');
+  const [deliveryPoint, setDeliveryPoint] = useState('Table B2');
+  const [paymentMethod, setPaymentMethod] = useState('Member account');
+  const [orderNote, setOrderNote] = useState('');
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [lastPlacedOrder, setLastPlacedOrder] = useState(null);
+
+  // Fallback to first member if none selected
   const member = currentMember || members[0] || {
     id: 'BCC-0482',
     name: 'Anika Rahman',
@@ -35,14 +259,157 @@ export default function MemberDashboardView() {
   const dues = mDue(member);
   const ledger = getMemberLedger(member);
 
-  // Filter transactions for this member
-  const memberTransactions = transactions.filter(
-    (t) => t.outlet && t.st === 'Success'
-  ).slice(0, 5);
+  // Load and manage member orders
+  const [memberOrders, setMemberOrders] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`bcc_orders_${member.id}`);
+      return saved ? JSON.parse(saved) : [
+        {
+          id: 'BCC-ORD-8492',
+          items: [
+            { name: 'Tsingtao Premium Draft Beer', qty: 2, price: 480 },
+            { name: 'Artisan Arabica Cappuccino', qty: 1, price: 280 }
+          ],
+          subtotal: 1240,
+          discount: 186,
+          total: 1054,
+          location: 'Lantern Bar & Lounge (Floor 2)',
+          point: 'Table B2',
+          method: 'Member account',
+          time: '25 mins ago',
+          status: 'In Preparation',
+          step: 2
+        }
+      ];
+    } catch {
+      return [];
+    }
+  });
+
+  // Save orders to localStorage on change
+  useEffect(() => {
+    try {
+      localStorage.setItem(`bcc_orders_${member.id}`, JSON.stringify(memberOrders));
+    } catch (e) {
+      console.warn('Failed to save member orders:', e);
+    }
+  }, [memberOrders, member.id]);
+
+  // Cart management helpers
+  const addToCart = (itemId) => {
+    setCart((prev) => ({
+      ...prev,
+      [itemId]: (prev[itemId] || 0) + 1
+    }));
+  };
+
+  const removeFromCart = (itemId) => {
+    setCart((prev) => {
+      const current = prev[itemId] || 0;
+      if (current <= 1) {
+        const copy = { ...prev };
+        delete copy[itemId];
+        return copy;
+      }
+      return { ...prev, [itemId]: current - 1 };
+    });
+  };
+
+  const clearCart = () => setCart({});
+
+  // Cart Computations
+  const cartItemCount = useMemo(() => {
+    return Object.values(cart).reduce((sum, q) => sum + q, 0);
+  }, [cart]);
+
+  const cartCalculations = useMemo(() => {
+    let subtotal = 0;
+    const items = [];
+    Object.keys(cart).forEach((id) => {
+      const qty = cart[id];
+      const menuItem = CAFE_AND_BAR_MENU.find((m) => m.id === id);
+      if (menuItem && qty > 0) {
+        const itemTotal = menuItem.price * qty;
+        subtotal += itemTotal;
+        items.push({
+          ...menuItem,
+          qty,
+          itemTotal
+        });
+      }
+    });
+
+    // 15% VIP Club Member Discount on all Café & Bar orders!
+    const discount = Math.round(subtotal * 0.15);
+    const total = Math.max(0, subtotal - discount);
+
+    return { items, subtotal, discount, total };
+  }, [cart]);
+
+  // Handle Order Submission
+  const handleConfirmOrder = (e) => {
+    e.preventDefault();
+    if (cartCalculations.items.length === 0) return;
+
+    setIsPlacingOrder(true);
+
+    const orderId = `BCC-ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+    const finalTotal = cartCalculations.total;
+
+    // Record in global transactions
+    if (addTxn) {
+      addTxn({
+        outlet: deliveryLocation.includes('Bar') ? 'Lantern Bar' : 'Tea Garden',
+        method: paymentMethod,
+        amount: finalTotal,
+        st: 'Success'
+      });
+    }
+
+    const newOrder = {
+      id: orderId,
+      items: cartCalculations.items.map((i) => ({
+        name: i.name,
+        qty: i.qty,
+        price: i.price,
+        icon: i.icon
+      })),
+      subtotal: cartCalculations.subtotal,
+      discount: cartCalculations.discount,
+      total: finalTotal,
+      location: deliveryLocation,
+      point: deliveryPoint.trim() || 'Floor Delivery',
+      note: orderNote.trim(),
+      method: paymentMethod,
+      time: 'Just now',
+      status: 'In Preparation',
+      step: 2
+    };
+
+    setTimeout(() => {
+      setMemberOrders((prev) => [newOrder, ...prev]);
+      setLastPlacedOrder(newOrder);
+      setCart({});
+      setIsPlacingOrder(false);
+      showToast(
+        lang === 'bn'
+          ? `অর্ডার কনফার্ম হয়েছে! আইডি: #${orderId}`
+          : `Order placed successfully! ID: #${orderId}`
+      );
+    }, 700);
+  };
+
+  // Filtered menu based on selected category
+  const filteredMenu = useMemo(() => {
+    if (selectedCategory === 'all') return CAFE_AND_BAR_MENU;
+    return CAFE_AND_BAR_MENU.filter((m) => m.category === selectedCategory);
+  }, [selectedCategory]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-12">
-      {/* Top Welcome & Notification Bar */}
+    <div className="space-y-6 animate-in fade-in duration-300 pb-16">
+      {/* ==================================================================== */}
+      {/* 1. TOP WELCOME & NOTIFICATION BANNER                                 */}
+      {/* ==================================================================== */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#082018] to-[#12382e] border border-[#e8b04a]/30 text-white shadow-lg">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#0b6e52] to-[#e8b04a] p-0.5 flex items-center justify-center shadow-md flex-shrink-0">
@@ -70,16 +437,31 @@ export default function MemberDashboardView() {
 
         <div className="flex items-center gap-2 self-start sm:self-center">
           <button
+            onClick={() => setActiveTab('cafe_bar')}
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#e8b04a] to-[#d49e38] text-[#071d16] text-xs font-serif font-bold shadow-md hover:brightness-105 transition-all flex items-center gap-1.5 active:scale-95"
+          >
+            <span>☕🍺</span>
+            <span>{lang === 'bn' ? 'ক্যাফে ও বিয়ার অর্ডার' : 'Order Café & Beer'}</span>
+            {cartItemCount > 0 && (
+              <span className="w-5 h-5 rounded-full bg-[#071d16] text-white text-[10px] flex items-center justify-center font-mono">
+                {cartItemCount}
+              </span>
+            )}
+          </button>
+
+          <button
             onClick={() => openChat('Explore All Floors')}
-            className="px-3.5 py-1.5 rounded-xl bg-[#e8b04a] hover:bg-[#d49e38] text-[#071d16] text-xs font-serif font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95"
+            className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-serif font-medium transition-all flex items-center gap-1.5"
           >
             <span>🤖</span>
-            <span>{lang === 'bn' ? 'ক্লাব এআই অ্যাসিস্ট্যান্ট' : 'Open Club AI'}</span>
+            <span>{lang === 'bn' ? 'ক্লাব এআই' : 'Club AI'}</span>
           </button>
         </div>
       </div>
 
-      {/* VIP Member Pass Card & Quick Metrics */}
+      {/* ==================================================================== */}
+      {/* 2. VIP MEMBER PASS & QUICK METRICS BAR                               */}
+      {/* ==================================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Digital VIP Member Pass Card (5 cols) */}
         <div className="lg:col-span-5">
@@ -182,7 +564,7 @@ export default function MemberDashboardView() {
                   className="w-full py-2 px-3 rounded-xl bg-bcc-btn hover:bg-bcc-btn-h text-white text-xs font-semibold shadow-md transition-all flex items-center justify-center gap-1.5"
                 >
                   <span>💳</span>
-                  <span>{lang === 'bn' ? 'বকেয়া পরিশোধ করুন (Pay Now)' : 'Pay Dues Online'}</span>
+                  <span>{lang === 'bn' ? 'বকেয়া পরিশোধ করুন' : 'Pay Dues Online'}</span>
                 </button>
               ) : (
                 <div className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
@@ -193,27 +575,32 @@ export default function MemberDashboardView() {
             </div>
           </div>
 
-          {/* Card 2: MTD Club Spend */}
+          {/* Card 2: 15% VIP Food & Drink Privilege */}
           <div className="p-5 rounded-2xl bg-bcc-surface border border-bcc-line shadow-sm flex flex-col justify-between">
             <div>
-              <div className="text-xs font-medium text-bcc-muted">
-                {lang === 'bn' ? 'চলতি মাসের খরচ (Spend MTD)' : 'Spend (MTD)'}
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-bcc-muted">
+                  {lang === 'bn' ? 'ভিআইপি ডাইনিং ডিসকাউন্ট' : 'VIP Dining Benefit'}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/20">
+                  15% OFF
+                </span>
               </div>
               <div className="text-2xl sm:text-3xl font-serif font-bold text-bcc-text mt-2">
-                {money(member.spend)}
+                15% OFF
               </div>
               <p className="text-[11px] text-bcc-muted mt-1">
-                Dining, Hotel Stay & Club Services
+                Applied on all Café, Beer & Bar orders
               </p>
             </div>
 
             <div className="pt-3">
               <button
-                onClick={() => setView('pos')}
-                className="w-full py-2 px-3 rounded-xl border border-bcc-line hover:bg-black/5 dark:hover:bg-white/5 text-bcc-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                onClick={() => setActiveTab('cafe_bar')}
+                className="w-full py-2 px-3 rounded-xl bg-[#0b6e52] hover:bg-[#095942] text-white text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-1.5"
               >
-                <span>🥢</span>
-                <span>{lang === 'bn' ? 'রেস্তোরাঁ ও মেনু' : 'Order Dining'}</span>
+                <span>🍺</span>
+                <span>{lang === 'bn' ? 'অর্ডার শুরু করুন' : 'Order Now'}</span>
               </button>
             </div>
           </div>
@@ -234,45 +621,48 @@ export default function MemberDashboardView() {
 
             <div className="pt-3">
               <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800/40 inline-block">
-                VIP Tier Status Active
+                VIP Tier Active
               </span>
             </div>
           </div>
 
-          {/* Card 4: 10-Floor Smart Facilities */}
+          {/* Card 4: Month-to-Date Spend */}
           <div className="p-5 rounded-2xl bg-bcc-surface border border-bcc-line shadow-sm flex flex-col justify-between">
             <div>
               <div className="text-xs font-medium text-bcc-muted">
-                {lang === 'bn' ? '১০-তলা সুবিধা ও রুম' : '10-Floor Access'}
+                {lang === 'bn' ? 'চলতি মাসের খরচ (Spend MTD)' : 'Spend (MTD)'}
               </div>
-              <div className="text-lg font-serif font-bold text-bcc-text mt-2 flex items-center gap-1.5">
-                <span>🏢 10 Floors Active</span>
+              <div className="text-2xl sm:text-3xl font-serif font-bold text-bcc-text mt-2">
+                {money(member.spend)}
               </div>
               <p className="text-[11px] text-bcc-muted mt-1">
-                Gym (Fl 8) · Pool (Fl 9) · Suites (Fl 4-7)
+                Dining, Hotel Stay & Club Services
               </p>
             </div>
 
             <div className="pt-3">
               <button
-                onClick={() => setView('stay')}
-                className="w-full py-2 px-3 rounded-xl bg-bcc-surface2 hover:bg-bcc-line text-bcc-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                onClick={() => setActiveTab('orders')}
+                className="w-full py-2 px-3 rounded-xl border border-bcc-line hover:bg-black/5 dark:hover:bg-white/5 text-bcc-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
               >
-                <span>🛏️</span>
-                <span>{lang === 'bn' ? 'রুম বুকিং করুন' : 'Book Hotel Room'}</span>
+                <span>📋</span>
+                <span>{lang === 'bn' ? 'অর্ডার হিস্ট্রি' : 'View Orders'}</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tab Navigation Menu */}
+      {/* ==================================================================== */}
+      {/* 3. TAB NAVIGATION MENU                                               */}
+      {/* ==================================================================== */}
       <div className="flex border-b border-bcc-line gap-2 overflow-x-auto pb-px">
         {[
+          { id: 'cafe_bar', label: lang === 'bn' ? 'ক্যাফে ও বিয়ার/বার অর্ডার' : 'Order Café & Beer', icon: '☕🍺', badge: cartItemCount > 0 ? cartItemCount : null },
+          { id: 'orders', label: lang === 'bn' ? 'অর্ডার হিস্ট্রি ও ট্র্যাকিং' : 'Order History & Status', icon: '📋', badge: memberOrders.length },
           { id: 'card', label: lang === 'bn' ? 'সদস্য পরিচিতি ও সুবিধা' : 'Profile & Privileges', icon: '👤' },
           { id: 'dues', label: lang === 'bn' ? 'বকেয়া ও অ্যাকাউন্ট স্টেটমেন্ট' : 'Dues & Invoices', icon: '🧾' },
-          { id: 'book', label: lang === 'bn' ? 'রুম ও ডাইনিং বুকিং' : 'Bookings & Reservations', icon: '🏨' },
-          { id: 'orders', label: lang === 'bn' ? 'এআই ফুড অর্ডার হিস্ট্রি' : 'Orders & AI Concierge', icon: '🤖' }
+          { id: 'book', label: lang === 'bn' ? 'রুম ও ডাইনিং বুকিং' : 'Book Facilities', icon: '🏨' }
         ].map((tab) => (
           <button
             key={tab.id}
@@ -285,11 +675,504 @@ export default function MemberDashboardView() {
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
+            {tab.badge && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                activeTab === tab.id ? 'bg-[#0b6e52] text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
+              }`}>
+                {tab.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      {/* Tab 1: Member Profile & Privileges */}
+      {/* ==================================================================== */}
+      {/* TAB 1: CAFÉ & BEER/BAR ORDERING WORKSPACE (FEATURE REQUESTED)        */}
+      {/* ==================================================================== */}
+      {activeTab === 'cafe_bar' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Recent Order Toast Alert if just placed */}
+          {lastPlacedOrder && (
+            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 shadow-md flex items-center justify-between gap-3 animate-in fade-in zoom-in-95">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🎉</span>
+                <div>
+                  <h4 className="font-bold text-sm font-serif">
+                    Order Confirmed #{lastPlacedOrder.id}!
+                  </h4>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                    Preparing now · Delivering to {lastPlacedOrder.location} ({lastPlacedOrder.point}) in 10-15 mins.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab('orders')}
+                className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors whitespace-nowrap shadow-xs"
+              >
+                Track Order
+              </button>
+            </div>
+          )}
+
+          {/* Category Filter Pills & Notice */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-bcc-surface p-3.5 rounded-2xl border border-bcc-line shadow-xs">
+            {/* Category Filter Buttons */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { id: 'all', label: 'All Items', icon: '🍽️' },
+                { id: 'beer', label: 'Beer & Bar Drinks', icon: '🍺' },
+                { id: 'cafe', label: 'Café & Coffee', icon: '☕' },
+                { id: 'food', label: 'Food & Snacks', icon: '🍔' }
+              ].map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(c.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 ${
+                    selectedCategory === c.id
+                      ? 'bg-[#0b6e52] text-white shadow-xs font-semibold'
+                      : 'bg-black/5 dark:bg-white/5 text-bcc-muted hover:text-bcc-text'
+                  }`}
+                >
+                  <span>{c.icon}</span>
+                  <span>{c.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+              <span>✨</span>
+              <span>15% VIP Member Discount automatically applied at checkout</span>
+            </div>
+          </div>
+
+          {/* Main 2-Column Ordering Layout: Menu Grid (Left) + Cart & Checkout (Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left 8 Cols: Menu Items Cards Grid */}
+            <div className="lg:col-span-7 xl:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {filteredMenu.map((item) => {
+                const itemQtyInCart = cart[item.id] || 0;
+                return (
+                  <div
+                    key={item.id}
+                    className="p-4 rounded-2xl bg-bcc-surface border border-bcc-line shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+                  >
+                    <div>
+                      {/* Top Outlet & Category Badges */}
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          {item.outlet} · {item.floor}
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                          {item.badge}
+                        </span>
+                      </div>
+
+                      {/* Item Title & Emoji Icon */}
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-110 transition-transform">
+                          {item.icon}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-serif font-bold text-sm text-bcc-text leading-snug">
+                            {item.name}
+                          </h4>
+                          <div className="text-[11px] text-bcc-muted font-serif">
+                            {item.alt} {item.bnName ? `· ${item.bnName}` : ''}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-bcc-muted mt-2 line-clamp-2 leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
+
+                    {/* Price and Add to Cart Buttons */}
+                    <div className="mt-4 pt-3 border-t border-bcc-line flex items-center justify-between">
+                      <div>
+                        <div className="text-base font-serif font-bold text-bcc-text">
+                          {money(item.price)}
+                        </div>
+                        <div className="text-[10px] text-emerald-600 font-medium">
+                          VIP: {money(Math.round(item.price * 0.85))}
+                        </div>
+                      </div>
+
+                      {itemQtyInCart > 0 ? (
+                        <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 rounded-xl px-2 py-1">
+                          <button
+                            type="button"
+                            onClick={() => removeFromCart(item.id)}
+                            className="w-6 h-6 rounded-lg bg-white dark:bg-gray-800 text-bcc-text flex items-center justify-center font-bold text-sm hover:bg-gray-100 shadow-xs active:scale-95"
+                          >
+                            -
+                          </button>
+                          <span className="font-mono font-bold text-xs px-1 text-emerald-800 dark:text-emerald-200">
+                            {itemQtyInCart}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => addToCart(item.id)}
+                            className="w-6 h-6 rounded-lg bg-[#0b6e52] text-white flex items-center justify-center font-bold text-sm hover:bg-[#095942] shadow-xs active:scale-95"
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => addToCart(item.id)}
+                          className="px-3.5 py-1.5 rounded-xl bg-[#0b6e52] hover:bg-[#095942] text-white text-xs font-semibold shadow-xs transition-all active:scale-95 flex items-center gap-1.5"
+                        >
+                          <span>+ Add to Order</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Right 5 Cols: Cart, Delivery Selection & Checkout Panel */}
+            <div className="lg:col-span-5 xl:col-span-4 sticky top-20">
+              <div className="p-5 rounded-3xl bg-bcc-surface border border-bcc-line shadow-xl space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-bcc-line">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🛍️</span>
+                    <h3 className="font-serif font-bold text-base text-bcc-text">
+                      {lang === 'bn' ? 'আপনার অর্ডার কার্ট' : 'Member Order Cart'}
+                    </h3>
+                  </div>
+                  {cartCalculations.items.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearCart}
+                      className="text-[11px] text-rose-500 hover:text-rose-700 font-semibold transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+
+                {/* Cart Items List */}
+                {cartCalculations.items.length === 0 ? (
+                  <div className="py-8 text-center text-bcc-muted space-y-2">
+                    <div className="text-3xl">☕🍺</div>
+                    <div className="text-xs font-medium">Your cart is currently empty.</div>
+                    <p className="text-[11px] text-bcc-muted max-w-xs mx-auto">
+                      Select any Café coffee, tea, craft beer, or snack from the left to order directly to your table or room!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+                    {cartCalculations.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between gap-2 p-2 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-bcc-line text-xs"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-base flex-shrink-0">{item.icon}</span>
+                          <div className="min-w-0">
+                            <div className="font-serif font-bold truncate text-bcc-text">{item.name}</div>
+                            <div className="text-[10px] text-bcc-muted">{money(item.price)} × {item.qty}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => removeFromCart(item.id)}
+                            className="w-5 h-5 rounded bg-white dark:bg-gray-800 text-bcc-text flex items-center justify-center font-bold text-xs border border-bcc-line shadow-2xs"
+                          >
+                            -
+                          </button>
+                          <span className="font-mono font-bold text-xs px-0.5">{item.qty}</span>
+                          <button
+                            type="button"
+                            onClick={() => addToCart(item.id)}
+                            className="w-5 h-5 rounded bg-[#0b6e52] text-white flex items-center justify-center font-bold text-xs shadow-2xs"
+                          >
+                            +
+                          </button>
+                          <span className="font-mono font-bold text-xs ml-1 text-bcc-text">
+                            {money(item.itemTotal)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Delivery Location & Instructions Form */}
+                <form onSubmit={handleConfirmOrder} className="space-y-3 pt-2 border-t border-bcc-line">
+                  <div>
+                    <label className="text-xs font-semibold text-bcc-text block mb-1">
+                      {lang === 'bn' ? 'ডেলিভারি লোকেশন (Delivery Location)' : 'Club Delivery Location'}
+                    </label>
+                    <select
+                      value={deliveryLocation}
+                      onChange={(e) => setDeliveryLocation(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-bcc-line bg-bcc-surface text-xs font-medium"
+                      required
+                    >
+                      <option value="Lantern Bar & Lounge (Floor 2)">🛋️ Lantern Bar & Lounge (Floor 2)</option>
+                      <option value="Tea Garden Café Terrace (Floor 3)">☕ Tea Garden Café Terrace (Floor 3)</option>
+                      <option value="Silk Route Restaurant (Floor 2)">🥢 Silk Route Restaurant (Floor 2)</option>
+                      <option value="Club Guest Room (Floor 4/5)">🛏️ Club Guest Room (Floor 4/5)</option>
+                      <option value="Olympic Swimming Pool (Floor 9)">🏊 Poolside Lounge (Floor 9)</option>
+                      <option value="Gym & Sauna Lounge (Floor 8)">🏋️ Gym & Sauna Lounge (Floor 8)</option>
+                      <option value="VIP Executive Boardroom (Floor 6)">🏛️ VIP Executive Boardroom (Floor 6)</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] font-semibold text-bcc-muted block mb-1">
+                        Table / Room No.
+                      </label>
+                      <input
+                        type="text"
+                        value={deliveryPoint}
+                        onChange={(e) => setDeliveryPoint(e.target.value)}
+                        placeholder="e.g. Table B2 / Room 402"
+                        className="w-full px-3 py-1.5 rounded-xl border border-bcc-line bg-bcc-surface text-xs font-mono"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-bcc-muted block mb-1">
+                        Payment Method
+                      </label>
+                      <select
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-bcc-line bg-bcc-surface text-xs font-medium"
+                      >
+                        <option value="Member account">💳 Member Account</option>
+                        <option value="bKash">📱 bKash</option>
+                        <option value="Nagad">📱 Nagad</option>
+                        <option value="Cash on Delivery">💵 Cash at Table</option>
+                        <option value="Card">💳 POS Card</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <input
+                      type="text"
+                      value={orderNote}
+                      onChange={(e) => setOrderNote(e.target.value)}
+                      placeholder="Special instructions (e.g. Extra ice, lemon, less sugar)"
+                      className="w-full px-3 py-1.5 rounded-xl border border-bcc-line bg-bcc-surface text-xs placeholder-gray-400"
+                    />
+                  </div>
+
+                  {/* Pricing Breakdown */}
+                  {cartCalculations.items.length > 0 && (
+                    <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-bcc-line space-y-1.5 text-xs">
+                      <div className="flex justify-between text-bcc-muted">
+                        <span>Items Subtotal</span>
+                        <span className="font-mono">{money(cartCalculations.subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-600 font-medium">
+                        <span>VIP Member Privilege (15% OFF)</span>
+                        <span className="font-mono">-{money(cartCalculations.discount)}</span>
+                      </div>
+                      <div className="pt-1.5 border-t border-bcc-line flex justify-between font-bold text-sm text-bcc-text">
+                        <span>Total Payable</span>
+                        <span className="font-mono text-emerald-700 dark:text-emerald-400 font-serif">
+                          {money(cartCalculations.total)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={cartCalculations.items.length === 0 || isPlacingOrder}
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#0b6e52] to-[#128a67] hover:from-[#095942] hover:to-[#0f7758] text-white font-serif font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                  >
+                    {isPlacingOrder ? (
+                      <span>Placing Order...</span>
+                    ) : (
+                      <>
+                        <span>☕🍺 Confirm & Order Now</span>
+                        {cartCalculations.items.length > 0 && (
+                          <span className="font-mono font-normal">
+                            ({money(cartCalculations.total)})
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* TAB 2: MEMBER ORDERS & REAL-TIME TRACKING                            */}
+      {/* ==================================================================== */}
+      {activeTab === 'orders' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h3 className="font-serif font-bold text-lg text-bcc-text">
+                {lang === 'bn' ? 'আমার খাবারের অর্ডার ও লাইভ স্ট্যাটাস' : 'My Orders & Real-Time Tracking'}
+              </h3>
+              <p className="text-xs text-bcc-muted mt-0.5">
+                Track all Café coffee, Tsingtao beer, food and club service deliveries in real-time.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('cafe_bar')}
+              className="px-4 py-2 rounded-xl bg-[#0b6e52] hover:bg-[#095942] text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"
+            >
+              <span>+ Place New Order</span>
+            </button>
+          </div>
+
+          {/* Active Orders List with Stepper */}
+          <div className="space-y-4">
+            {memberOrders.map((order) => (
+              <div
+                key={order.id}
+                className="p-5 rounded-2xl bg-bcc-surface border border-bcc-line shadow-sm space-y-4"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-bcc-line">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🍽️</span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-sm text-bcc-text">
+                          Order #{order.id}
+                        </span>
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300">
+                          {order.status}
+                        </span>
+                      </div>
+                      <div className="text-xs text-bcc-muted font-sans mt-0.5">
+                        📍 Destination: <b>{order.location}</b> ({order.point}) · {order.time}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-sm font-serif font-bold text-emerald-700 dark:text-emerald-400 font-mono">
+                      {money(order.total)}
+                    </div>
+                    <div className="text-[10px] text-bcc-muted font-medium">
+                      Paid via {order.method}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress Tracking Stepper */}
+                <div className="py-2">
+                  <div className="flex items-center justify-between text-xs font-medium text-bcc-muted max-w-xl mx-auto relative">
+                    <div className="flex flex-col items-center gap-1 z-10">
+                      <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">
+                        ✓
+                      </span>
+                      <span className="text-[10.5px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                        Received
+                      </span>
+                    </div>
+
+                    <div className="flex-1 h-1 bg-emerald-500 mx-2" />
+
+                    <div className="flex flex-col items-center gap-1 z-10">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        (order.step || 2) >= 2 ? 'bg-emerald-600 text-white animate-pulse' : 'bg-gray-200 text-gray-500'
+                      }`}>
+                        ⏳
+                      </span>
+                      <span className="text-[10.5px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                        In Preparation
+                      </span>
+                    </div>
+
+                    <div className={`flex-1 h-1 mx-2 ${
+                      (order.step || 2) >= 3 ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'
+                    }`} />
+
+                    <div className="flex flex-col items-center gap-1 z-10">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        (order.step || 2) >= 3 ? 'bg-emerald-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+                      }`}>
+                        🛵
+                      </span>
+                      <span className="text-[10.5px] text-bcc-muted">
+                        Out for Delivery
+                      </span>
+                    </div>
+
+                    <div className={`flex-1 h-1 mx-2 ${
+                      (order.step || 2) >= 4 ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'
+                    }`} />
+
+                    <div className="flex flex-col items-center gap-1 z-10">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        (order.step || 2) >= 4 ? 'bg-emerald-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+                      }`}>
+                        ✓
+                      </span>
+                      <span className="text-[10.5px] text-bcc-muted">
+                        Delivered
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Ordered List */}
+                <div className="bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-bcc-line">
+                  <div className="text-xs font-semibold text-bcc-text mb-2">Items in this order:</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {order.items.map((i, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-bcc-muted">
+                        <span>{i.icon || '☕'} {i.name} × {i.qty}</span>
+                        <span className="font-mono">{money(i.price * i.qty)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {order.note && (
+                    <div className="text-[11px] text-amber-700 dark:text-amber-400 mt-2 pt-2 border-t border-bcc-line italic">
+                      Note: "{order.note}"
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {memberOrders.length === 0 && (
+              <div className="p-8 text-center bg-bcc-surface rounded-2xl border border-bcc-line text-bcc-muted space-y-3">
+                <div className="text-4xl">☕🍺</div>
+                <div className="font-serif font-bold text-base text-bcc-text">No active orders placed yet</div>
+                <p className="text-xs max-w-sm mx-auto">
+                  You can order artisan coffees, Tsingtao beer, snacks, and cocktails directly to your seat or room!
+                </p>
+                <button
+                  onClick={() => setActiveTab('cafe_bar')}
+                  className="px-4 py-2 rounded-xl bg-[#0b6e52] text-white text-xs font-semibold shadow-xs"
+                >
+                  Browse Menu & Order
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* TAB 3: MEMBER PROFILE & PRIVILEGES                                   */}
+      {/* ==================================================================== */}
       {activeTab === 'card' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-200">
           {/* Left: Official Membership Record */}
@@ -375,13 +1258,15 @@ export default function MemberDashboardView() {
             </div>
 
             <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-xs text-emerald-800 dark:text-emerald-300">
-              💡 <b>Tip:</b> Need assistance with room reservation, table booking or food delivery? Just open our <b>Club AI Assistant</b> at the bottom right anytime!
+              💡 <b>Tip:</b> Order drinks, beers, or snacks anytime from the <b>Order Café & Beer</b> tab above!
             </div>
           </div>
         </div>
       )}
 
-      {/* Tab 2: Dues & Ledger */}
+      {/* ==================================================================== */}
+      {/* TAB 4: DUES & STATEMENTS                                             */}
+      {/* ==================================================================== */}
       {activeTab === 'dues' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           <div className="p-5 rounded-2xl bg-bcc-surface border border-bcc-line shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -441,7 +1326,9 @@ export default function MemberDashboardView() {
         </div>
       )}
 
-      {/* Tab 3: Quick Bookings & Facility Reservation */}
+      {/* ==================================================================== */}
+      {/* TAB 5: FACILITY & ROOM RESERVATIONS                                  */}
+      {/* ==================================================================== */}
       {activeTab === 'book' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-200">
           {/* Booking 1: Hotel Rooms */}
@@ -502,69 +1389,6 @@ export default function MemberDashboardView() {
           </div>
         </div>
       )}
-
-      {/* Tab 4: Orders & AI Concierge */}
-      {activeTab === 'orders' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="p-5 rounded-2xl bg-gradient-to-r from-[#0b6e52] to-[#128a67] text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="font-serif font-bold text-lg">Smart AI In-Chat Ordering Active</h3>
-              <p className="text-xs text-emerald-100 mt-1">
-                You can order food, coffee, passes, and beverages directly through our 24/7 Club AI Assistant!
-              </p>
-            </div>
-            <button
-              onClick={() => openChat('I want 2 burgers')}
-              className="px-4 py-2.5 rounded-xl bg-[#e8b04a] text-[#071d16] font-serif font-bold text-xs shadow-md hover:bg-[#d49e38] transition-colors whitespace-nowrap"
-            >
-              🍔 Try "I want 2 burgers"
-            </button>
-          </div>
-
-          {/* Recent Orders Table */}
-          <div className="bg-bcc-surface border border-bcc-line rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-5 py-3.5 border-b border-bcc-line font-serif font-bold text-sm text-bcc-text">
-              Recent Food & Beverage Orders
-            </div>
-            <div className="overflow-x-auto">
-              <table className="custom-table">
-                <thead>
-                  <tr className="bg-black/5 dark:bg-white/5">
-                    <th>Order No.</th>
-                    <th>Outlet & Floor</th>
-                    <th>Payment Method</th>
-                    <th>Status</th>
-                    <th className="text-right">Total Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {memberTransactions.map((t, idx) => (
-                    <tr key={t.id || idx}>
-                      <td className="font-mono text-xs font-semibold">{t.id}</td>
-                      <td className="text-xs font-medium">{t.outlet} (Floor 2/3)</td>
-                      <td className="text-xs">{t.method}</td>
-                      <td>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold border border-emerald-300">
-                          {t.st}
-                        </span>
-                      </td>
-                      <td className="text-xs font-mono font-bold text-right">{money(t.amount)}</td>
-                    </tr>
-                  ))}
-                  {memberTransactions.length === 0 && (
-                    <tr>
-                      <td colSpan="5" className="text-center py-8 text-bcc-muted text-sm">
-                        No orders recorded yet. Ask Club AI to order coffee or dishes!
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
-
